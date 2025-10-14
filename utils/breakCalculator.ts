@@ -9,7 +9,7 @@
 export interface Break {
   start: number;
   end: number;
-  type: "paid" | "unpaid";
+  type: "break-30s" | "break-15s";
 }
 
 export function calculateBreaks(startSlot: number, endSlot: number): Break[] {
@@ -24,61 +24,59 @@ export function calculateBreaks(startSlot: number, endSlot: number): Break[] {
   } else if (durationInHours >= 4 && durationInHours <= 5) {
     // 1×15 min (paid)
     const breakStart = startSlot + Math.floor(durationInSlots / 2);
-    breaks.push({ start: breakStart, end: breakStart + 1, type: "paid" }); // 1 slot = 15 min
+    breaks.push({ start: breakStart, end: breakStart + 1, type: "break-15s" }); // 1 slot = 15 min
   } else if (durationInHours > 5 && durationInHours < 7) {
     // 1×15 min (paid) + 1×30 min (unpaid)
     const thirdPoint = Math.floor(durationInSlots / 3);
 
-    // First paid break at 1/3
+    // First half paid break at 1/4
     breaks.push({
       start: startSlot + thirdPoint,
       end: startSlot + thirdPoint + 1,
-      type: "paid",
+      type: "break-15s",
     });
-
-    // Unpaid break at 2/3
+    // second half unpaid break at 3/4
     const unpaidStart = startSlot + thirdPoint * 2;
-    breaks.push({ start: unpaidStart, end: unpaidStart + 2, type: "unpaid" }); // 2 slots = 30 min
+    breaks.push({
+      start: unpaidStart,
+      end: unpaidStart + 2,
+      type: "break-30s",
+    }); // 2 slots = 30 min
   } else if (durationInHours >= 7 && durationInHours < 10) {
     // 2×15 min (paid) + 1×30 min (unpaid)
-    const quarterPoint = Math.floor(durationInSlots / 4);
+    const thirdPoint = Math.floor(durationInSlots / 3);
 
-    // First paid break at 1/4
+    // First half break at 1/3
     breaks.push({
-      start: startSlot + quarterPoint,
-      end: startSlot + quarterPoint + 1,
-      type: "paid",
+      start: startSlot + thirdPoint,
+      end: startSlot + thirdPoint + 2,
+      type: "break-30s",
     });
 
-    // Unpaid break at 2/4 (middle)
-    const unpaidStart = startSlot + quarterPoint * 2;
-    breaks.push({ start: unpaidStart, end: unpaidStart + 2, type: "unpaid" });
-
-    // Second paid break at 3/4
-    const secondPaidStart = startSlot + quarterPoint * 3;
+    // Second half paid break at 2/3
+    const secondPaidStart = startSlot + thirdPoint * 2;
     breaks.push({
       start: secondPaidStart,
-      end: secondPaidStart + 1,
-      type: "paid",
+      end: secondPaidStart + 2,
+      type: "break-30s",
     });
   } else {
     // For shifts >= 10 hours, use same as 7-10h (can be extended later if needed)
-    const quarterPoint = Math.floor(durationInSlots / 4);
+    const thirdPoint = Math.floor(durationInSlots / 3);
 
+    // First half break at 1/3
     breaks.push({
-      start: startSlot + quarterPoint,
-      end: startSlot + quarterPoint + 1,
-      type: "paid",
+      start: startSlot + thirdPoint,
+      end: startSlot + thirdPoint + 2,
+      type: "break-30s",
     });
 
-    const unpaidStart = startSlot + quarterPoint * 2;
-    breaks.push({ start: unpaidStart, end: unpaidStart + 2, type: "unpaid" });
-
-    const secondPaidStart = startSlot + quarterPoint * 3;
+    // Second half paid break at 2/3
+    const secondPaidStart = startSlot + thirdPoint * 2;
     breaks.push({
       start: secondPaidStart,
-      end: secondPaidStart + 1,
-      type: "paid",
+      end: secondPaidStart + 2,
+      type: "break-30s",
     });
   }
 

@@ -18,6 +18,21 @@ export interface Shift {
   startSlot: number;
   endSlot: number;
   breaks: Break[];
+  roles: Role[];
+}
+
+const ROLE_TYPES = ["reg", "floor", "coolroom", "online"] as const;
+
+const ROLE_TYPE_COLORS: Record<(typeof ROLE_TYPES)[number], string> = {
+  reg: "#42A5F5", // blue
+  floor: "#ffc356", // orange
+  coolroom: "#80DEEA", // cyan
+  online: "#4CAF50", // green
+};
+
+interface Role {
+  slotNumber: number;
+  type: (typeof ROLE_TYPES)[number];
 }
 
 interface RosterGridProps {
@@ -130,6 +145,52 @@ export function RosterGrid({
     setDragEnd({ employee, slot });
   };
 
+  const handleRightClick = (
+    employee: string,
+    slot: number,
+    e: React.MouseEvent
+  ) => {
+    e.preventDefault(); // Prevent default context menu
+
+    const shift = getShiftForSlot(employee, slot);
+    if (!shift) return; // Only proceed if there's a shift
+
+    // Find existing role for this specific slot
+    const existingRoleIndex = shift.roles.findIndex(
+      (role) => role.slotNumber === slot
+    );
+    const currentType =
+      existingRoleIndex !== -1 ? shift.roles[existingRoleIndex].type : "reg";
+
+    // Get next role type
+    const currentIndex = ROLE_TYPES.indexOf(currentType);
+    const nextType = ROLE_TYPES[(currentIndex + 1) % ROLE_TYPES.length];
+
+    // Create updated roles array
+    const updatedRoles = [...shift.roles];
+    if (existingRoleIndex !== -1) {
+      // Update existing role
+      updatedRoles[existingRoleIndex] = {
+        slotNumber: slot,
+        type: nextType,
+      };
+    } else {
+      // Add new role
+      updatedRoles.push({
+        slotNumber: slot,
+        type: nextType,
+      });
+    }
+    // Update shift with new roles
+    const updatedShift = {
+      ...shift,
+      roles: updatedRoles,
+    };
+
+    // Update shifts array
+    onShiftsChange(shifts.map((s) => (s.id === shift.id ? updatedShift : s)));
+  };
+
   const handleMouseEnter = (employee: string, slot: number) => {
     if (isDragging && dragStart && dragStart.employee === employee) {
       setDragEnd({ employee, slot });
@@ -144,12 +205,19 @@ export function RosterGrid({
 
         // Only create shift if it's at least 2 hours (8 slots)
         if (end - start >= 8) {
+          // Create an array of roles for each slot in the shift
+          const roles = Array.from({ length: end - start }, (_, index) => ({
+            slotNumber: start + index,
+            type: "reg" as const,
+          }));
+
           const newShift: Shift = {
             id: generateShiftId(),
             employeeId: dragStart.employee,
             startSlot: start,
             endSlot: end,
             breaks: calculateBreaks(start, end),
+            roles: roles, // Assign the array of roles
           };
 
           onShiftsChange([...shifts, newShift]);
@@ -265,20 +333,35 @@ export function RosterGrid({
   const getSlotType = (
     employee: string,
     slot: number
-  ): "shift" | "break-paid" | "break-unpaid" | "empty" => {
+  ):
+    | "break-15s"
+    | "break-30s"
+    | "empty"
+    | "reg"
+    | "floor"
+    | "coolroom"
+    | "online" => {
     const shift = shifts.find(
       (s) =>
         s.employeeId === employee && slot >= s.startSlot && slot < s.endSlot
     );
-    if (!shift) return "empty";
+    if (shift) {
+      const breakMatch = shift.breaks.find(
+        (b) => slot >= b.start && slot < b.end
+      );
+      if (breakMatch) {
+        return breakMatch.type === "break-15s" ? "break-15s" : "break-30s";
+      }
 
-    const breakMatch = shift.breaks.find(
-      (b) => slot >= b.start && slot < b.end
-    );
-    if (breakMatch) {
-      return breakMatch.type === "paid" ? "break-paid" : "break-unpaid";
+      // Find the role for this specific slot
+      const slotRole = shift.roles.find((role) => role.slotNumber === slot);
+      if (slotRole) {
+        return slotRole.type;
+      }
+      return "reg";
     }
-    return "shift";
+
+    return "empty";
   };
 
   const getShiftForSlot = (employee: string, slot: number) => {
@@ -353,32 +436,36 @@ export function RosterGrid({
               {/* Time header */}
               <div
                 className="flex h-12 border-b"
-                style={{ borderColor: "#E0E0E0" }}
+                style={{ borderColor: "#000000" }}
               >
                 {Array.from({ length: totalSlots }).map((_, slotIndex) => {
-                  // Show label every 2 slots (30 minutes)
+                  // Show label every 4 slots (60 minutes)
                   const showLabel = slotIndex % 4 === 0;
                   return (
-                    <div
-                      key={slotIndex}
-                      className="flex-shrink-0 border-r flex items-center justify-center"
-                      style={{
-                        width: `${CELL_WIDTH}px`,
-                        borderColor: "#E0E0E0",
-                        color: "#333333",
-                      }}
-                    >
-                      {showLabel && (
-                        <span
-                          className="inline-block text-xs break-words whitespace-normal"
-                          style={{
-                            width: `${CELL_WIDTH}px`,
-                          }}
-                        >
-                          {getTimeLabel(slotIndex)}
-                        </span>
-                      )}
-                    </div>
+                    <>
+                      <div
+                        key={slotIndex}
+                        className={`flex-shrink-0 flex items-center justify-center ${
+                          showLabel ? "border-l-2" : null
+                        }`}
+                        style={{
+                          width: `${CELL_WIDTH}px`,
+                          borderColor: "#000000",
+                          color: "#333333",
+                        }}
+                      >
+                        {showLabel && (
+                          <span
+                            className="inline-block text-xs break-words whitespace-normal"
+                            style={{
+                              width: `${CELL_WIDTH}px`,
+                            }}
+                          >
+                            {getTimeLabel(slotIndex)}
+                          </span>
+                        )}
+                      </div>
+                    </>
                   );
                 })}
               </div>
@@ -388,7 +475,7 @@ export function RosterGrid({
                 <div
                   key={employee}
                   className="flex h-12 border-b"
-                  style={{ borderColor: "#E0E0E0" }}
+                  style={{ borderColor: "#000000" }}
                 >
                   {Array.from({ length: totalSlots }).map((_, slotIndex) => {
                     const slotType = getSlotType(employee, slotIndex);
@@ -401,18 +488,29 @@ export function RosterGrid({
                       if (dragMode === "move-break" && movingBreak) {
                         backgroundColor =
                           movingBreak.shift.breaks[movingBreak.breakIndex]
-                            .type === "paid"
-                            ? "#FFE082"
-                            : "#FFCC80";
+                            .type === "break-15s"
+                            ? "#636363"
+                            : "#636363";
                       } else {
                         backgroundColor = "#A5D6A7";
                       }
-                    } else if (slotType === "shift") {
-                      backgroundColor = "#4CAF50";
-                    } else if (slotType === "break-paid") {
-                      backgroundColor = "#FFD54F";
-                    } else if (slotType === "break-unpaid") {
-                      backgroundColor = "#FFB74D";
+                    } else if (
+                      slotType === "break-15s" ||
+                      slotType === "break-30s"
+                    ) {
+                      backgroundColor = "#3b3b3b";
+                    } else {
+                      const shift = getShiftForSlot(employee, slotIndex);
+                      if (shift) {
+                        const slotRole = shift.roles.find(
+                          (role) => role.slotNumber === slotIndex
+                        );
+                        if (slotRole) {
+                          backgroundColor = ROLE_TYPE_COLORS[slotRole.type];
+                        } else {
+                          backgroundColor = ROLE_TYPE_COLORS.reg; // Default color for shift
+                        }
+                      }
                     }
 
                     const cellContent = (
@@ -421,7 +519,7 @@ export function RosterGrid({
                         className="flex-shrink-0 border-r relative select-none"
                         style={{
                           width: `${CELL_WIDTH}px`,
-                          borderColor: "#E0E0E0",
+                          borderColor: "#000000",
                           backgroundColor,
                           cursor: getCursorStyle(employee, slotIndex),
                         }}
@@ -430,6 +528,9 @@ export function RosterGrid({
                         }
                         onMouseEnter={() =>
                           handleMouseEnter(employee, slotIndex)
+                        }
+                        onContextMenu={(e) =>
+                          handleRightClick(employee, slotIndex, e)
                         }
                       >
                         {isFirstSlot && shift && (
@@ -472,6 +573,10 @@ export function RosterGrid({
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <div
+                                style={{
+                                  backgroundColor: "#d9ead3",
+                                  borderRight: "1px solid ",
+                                }}
                                 onMouseEnter={() => setHoveredShift(shift.id)}
                                 onMouseLeave={() => setHoveredShift(null)}
                               >
@@ -498,7 +603,7 @@ export function RosterGrid({
                                     {shift.breaks.map((brk, idx) => (
                                       <div key={idx} className="ml-2">
                                         • {getTimeLabel(brk.start)}–
-                                        {getTimeLabel(brk.end)} ({brk.type})
+                                        {getTimeLabel(brk.end)}
                                       </div>
                                     ))}
                                   </div>

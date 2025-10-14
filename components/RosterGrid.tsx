@@ -54,7 +54,7 @@ export function RosterGrid({
   const gridRef = useRef<HTMLDivElement>(null);
 
   // Time slots from 09:00 to 22:00 (15-minute intervals)
-  const startHour = 9;
+  const startHour = 8;
   const endHour = 22;
   const slotsPerHour = 4; // 15-minute intervals
   const totalSlots = (endHour - startHour) * slotsPerHour;

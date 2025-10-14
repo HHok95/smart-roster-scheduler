@@ -458,7 +458,7 @@ export function RosterGrid({
                     >
                       {showLabel && (
                         <span
-                          className="inline-block text-xs break-words whitespace-normal"
+                          className="inline-block ml-4 text-2xl"
                           style={{
                             width: `${CELL_WIDTH}px`,
                           }}
@@ -493,7 +493,7 @@ export function RosterGrid({
                             ? "#636363"
                             : "#636363";
                       } else {
-                        backgroundColor = "#A5D6A7";
+                        backgroundColor = "#e2ffe4";
                       }
                     } else if (
                       slotType === "break-15s" ||
@@ -517,7 +517,7 @@ export function RosterGrid({
                     const cellContent = (
                       <div
                         key={slotIndex}
-                        className="flex-shrink-0 border-r relative select-none"
+                        className="flex-shrink-0 border-r border-l relative select-none"
                         style={{
                           width: `${CELL_WIDTH}px`,
                           borderColor: "#000000",

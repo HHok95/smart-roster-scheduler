@@ -4,6 +4,8 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { EmployeeManager } from "./EmployeeManager";
 import { RosterGrid, Shift } from "./RosterGrid";
 import { DateNavigation } from "./DateNavigation";
+import { formatDateKey } from "@/utils/formatDateKey";
+import { useDateNavigation } from "@/hooks/useDateNavigation";
 
 const STORAGE_KEYS = {
   EMPLOYEES: "roster-employees",
@@ -15,9 +17,8 @@ interface RosterManagerProps {
 }
 
 export function RosterManager({ initialDate }: RosterManagerProps) {
-  // Use a ref to ensure we only use the initialDate on first render
-  const dateRef = useRef(initialDate);
-  const [currentDate, setCurrentDate] = useState(() => dateRef.current);
+  const { currentDate, goToPreviousDay, goToNextDay } =
+    useDateNavigation(initialDate);
   const [employees, setEmployees] = useState<string[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
 
@@ -58,25 +59,6 @@ export function RosterManager({ initialDate }: RosterManagerProps) {
       JSON.stringify(shifts)
     );
   }, [shifts, currentDate]);
-
-  const formatDateKey = (date: Date) => {
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
-      2,
-      "0"
-    )}-${String(date.getDate()).padStart(2, "0")}`;
-  };
-
-  const goToPreviousDay = () => {
-    const newDate = new Date(currentDate);
-    newDate.setDate(newDate.getDate() - 1);
-    setCurrentDate(newDate);
-  };
-
-  const goToNextDay = () => {
-    const newDate = new Date(currentDate);
-    newDate.setDate(newDate.getDate() + 1);
-    setCurrentDate(newDate);
-  };
 
   const handleAddEmployee = (name: string) => {
     const updatedEmployees = [...employees, name];

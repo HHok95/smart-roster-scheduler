@@ -409,14 +409,11 @@ export function RosterGrid({
       className="flex-1 overflow-hidden flex flex-col"
       style={{ backgroundColor: "#FAFAFA" }}
     >
-      <div className="flex-1 overflow-auto p-6">
+      <div className="flex-1 overflow-auto py-6 pr-1">
         <div className="inline-block min-w-full">
           <div className="flex">
             {/* Employee names column */}
-            <div
-              className="sticky left-0 z-10"
-              style={{ backgroundColor: "#FAFAFA" }}
-            >
+            <div className="sticky left-0 z-10 bg-[#FAFAFA]">
               <div className="h-20 border-b" style={{ borderColor: "#E0E0E0" }}>
                 <RosterLegend />
               </div>

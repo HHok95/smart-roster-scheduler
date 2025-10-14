@@ -27,7 +27,7 @@ const ROLE_TYPES = ["reg", "floor", "coolroom", "online"] as const;
 const ROLE_TYPE_COLORS: Record<(typeof ROLE_TYPES)[number], string> = {
   reg: "#42A5F5", // blue
   floor: "#ffc356", // orange
-  coolroom: "#80DEEA", // cyan
+  coolroom: "#cc99cc", // purple
   online: "#4CAF50", // green
 };
 

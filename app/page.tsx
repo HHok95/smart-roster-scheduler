@@ -11,7 +11,7 @@ const STORAGE_KEYS = {
 };
 
 export default function App() {
-  const [currentDate, setCurrentDate] = useState(new Date(2025, 9, 15)); // Oct 15, 2025
+  const [currentDate, setCurrentDate] = useState(new Date()); // Use current date
   const [employees, setEmployees] = useState<string[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
 
@@ -104,7 +104,7 @@ export default function App() {
 
   return (
     <div
-      className="h-screen flex flex-col"
+      className="h-screen flex flex-col p-0"
       style={{ backgroundColor: "#FAFAFA" }}
     >
       {/* Header */}

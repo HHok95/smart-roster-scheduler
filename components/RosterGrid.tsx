@@ -11,6 +11,7 @@ import {
   formatDuration,
   Break,
 } from "../utils/breakCalculator";
+import { RosterLegend } from "./RosterLegend";
 
 export interface Shift {
   id: string;
@@ -95,6 +96,8 @@ export function RosterGrid({
     e: React.MouseEvent
   ) => {
     e.preventDefault();
+    // Only proceed if it's a left click (button 0)
+    if (e.button !== 0) return;
 
     // Check if clicking on existing shift
     const existingShift = shifts.find(
@@ -151,6 +154,7 @@ export function RosterGrid({
     e: React.MouseEvent
   ) => {
     e.preventDefault(); // Prevent default context menu
+    e.stopPropagation();
 
     const shift = getShiftForSlot(employee, slot);
     if (!shift) return; // Only proceed if there's a shift
@@ -412,10 +416,9 @@ export function RosterGrid({
               className="sticky left-0 z-10"
               style={{ backgroundColor: "#FAFAFA" }}
             >
-              <div
-                className="h-12 border-b"
-                style={{ borderColor: "#E0E0E0" }}
-              ></div>
+              <div className="h-20 border-b" style={{ borderColor: "#E0E0E0" }}>
+                <RosterLegend />
+              </div>
               {employees.map((employee) => (
                 <div
                   key={employee}
@@ -435,37 +438,35 @@ export function RosterGrid({
             <div className="flex-1" ref={gridRef}>
               {/* Time header */}
               <div
-                className="flex h-12 border-b"
+                className="flex h-20 border-b"
                 style={{ borderColor: "#000000" }}
               >
                 {Array.from({ length: totalSlots }).map((_, slotIndex) => {
                   // Show label every 4 slots (60 minutes)
                   const showLabel = slotIndex % 4 === 0;
                   return (
-                    <>
-                      <div
-                        key={slotIndex}
-                        className={`flex-shrink-0 flex items-center justify-center ${
-                          showLabel ? "border-l-2" : null
-                        }`}
-                        style={{
-                          width: `${CELL_WIDTH}px`,
-                          borderColor: "#000000",
-                          color: "#333333",
-                        }}
-                      >
-                        {showLabel && (
-                          <span
-                            className="inline-block text-xs break-words whitespace-normal"
-                            style={{
-                              width: `${CELL_WIDTH}px`,
-                            }}
-                          >
-                            {getTimeLabel(slotIndex)}
-                          </span>
-                        )}
-                      </div>
-                    </>
+                    <div
+                      key={slotIndex}
+                      className={`flex-shrink-0 flex items-center justify-center ${
+                        showLabel ? "border-l-2" : null
+                      }`}
+                      style={{
+                        width: `${CELL_WIDTH}px`,
+                        borderColor: "#000000",
+                        color: "#333333",
+                      }}
+                    >
+                      {showLabel && (
+                        <span
+                          className="inline-block text-xs break-words whitespace-normal"
+                          style={{
+                            width: `${CELL_WIDTH}px`,
+                          }}
+                        >
+                          {getTimeLabel(slotIndex)}
+                        </span>
+                      )}
+                    </div>
                   );
                 })}
               </div>

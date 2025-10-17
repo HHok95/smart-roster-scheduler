@@ -599,7 +599,7 @@ export function RosterGrid({
                                 </div>
                                 <div>
                                   <strong>Shift:</strong>{" "}
-                                  {getTimeLabel(shift.startSlot)}–
+                                  {getTimeLabel(shift.startSlot)}-
                                   {getTimeLabel(shift.endSlot)}
                                 </div>
                                 {shift.breaks.length > 0 && (
@@ -607,7 +607,7 @@ export function RosterGrid({
                                     <strong>Breaks:</strong>
                                     {shift.breaks.map((brk, idx) => (
                                       <div key={idx} className="ml-2">
-                                        • {getTimeLabel(brk.start)}–
+                                        • {getTimeLabel(brk.start)}-
                                         {getTimeLabel(brk.end)}
                                       </div>
                                     ))}

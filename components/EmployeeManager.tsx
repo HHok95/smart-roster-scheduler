@@ -65,7 +65,7 @@ export function EmployeeManager({
               placeholder="Employee name"
               value={newEmployeeName}
               onChange={(e) => setNewEmployeeName(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyPress}
             />
             <Button onClick={handleAddEmployee} size="icon">
               <Plus className="h-4 w-4" />

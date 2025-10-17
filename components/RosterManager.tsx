@@ -1,6 +1,5 @@
 "use client";
-import { Suspense, useEffect, useState } from "react";
-import dynamic from "next/dynamic";
+import { Suspense, useState } from "react";
 import { EmployeeManager } from "./EmployeeManager";
 import { ErrorBoundary } from "react-error-boundary";
 import { RosterGrid } from "./RosterGrid";
@@ -8,15 +7,7 @@ import { useRosterData } from "@/hooks/useRosterData";
 import { useDateNavigation } from "@/hooks/useDateNavigation";
 import { Button } from "./ui/button";
 import { Loading } from "./loading";
-
-// Proper dynamic import with loading state
-const DateNavigation = dynamic(
-  () => import("./DateNavigation").then((mod) => mod.DateNavigation),
-  {
-    ssr: false,
-    loading: () => <Loading />,
-  }
-);
+import { DateNavigation } from "./DateNavigation";
 
 function ErrorFallback({
   error,
@@ -50,10 +41,6 @@ export function RosterManager() {
     handleRemoveEmployee,
     setShifts,
   } = useRosterData(currentDate);
-  useEffect(() => {
-    const time = new Date();
-    setInitialDate(time);
-  }, []);
 
   return (
     <div className="h-screen flex flex-col p-0 bg-[#FAFAFA]">

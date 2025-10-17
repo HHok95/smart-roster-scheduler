@@ -87,8 +87,14 @@ export function RosterGrid({
       .padStart(2, "0")}`;
   };
 
+  // Counter for generating unique IDs
+  const idCounter = useRef(0);
+
   const generateShiftId = () => {
-    return `shift-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    idCounter.current += 1;
+    return `shift-${Date.now()}-${idCounter.current
+      .toString()
+      .padStart(6, "0")}`;
   };
 
   const handleMouseDown = (

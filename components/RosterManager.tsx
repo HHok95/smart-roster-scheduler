@@ -1,5 +1,5 @@
 "use client";
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { EmployeeManager } from "./EmployeeManager";
 import { ErrorBoundary } from "react-error-boundary";
@@ -7,23 +7,16 @@ import { RosterGrid } from "./RosterGrid";
 import { useRosterData } from "@/hooks/useRosterData";
 import { useDateNavigation } from "@/hooks/useDateNavigation";
 import { Button } from "./ui/button";
+import { Loading } from "./loading";
 
 // Proper dynamic import with loading state
 const DateNavigation = dynamic(
   () => import("./DateNavigation").then((mod) => mod.DateNavigation),
   {
     ssr: false,
-    loading: () => <LoadingDateNavigation />,
+    loading: () => <Loading />,
   }
 );
-
-function LoadingDateNavigation() {
-  return (
-    <div className="min-w-[280px] h-[40px] flex items-center justify-center bg-gray-50 animate-pulse">
-      Loading...
-    </div>
-  );
-}
 
 function ErrorFallback({
   error,
@@ -46,11 +39,8 @@ function ErrorFallback({
   );
 }
 
-interface RosterManagerProps {
-  initialDate: Date;
-}
-
-export function RosterManager({ initialDate }: RosterManagerProps) {
+export function RosterManager() {
+  const [initialDate, setInitialDate] = useState<Date>(new Date());
   const { currentDate, goToPreviousDay, goToNextDay } =
     useDateNavigation(initialDate);
   const {
@@ -60,6 +50,10 @@ export function RosterManager({ initialDate }: RosterManagerProps) {
     handleRemoveEmployee,
     setShifts,
   } = useRosterData(currentDate);
+  useEffect(() => {
+    const time = new Date();
+    setInitialDate(time);
+  }, []);
 
   return (
     <div className="h-screen flex flex-col p-0 bg-[#FAFAFA]">
@@ -73,7 +67,7 @@ export function RosterManager({ initialDate }: RosterManagerProps) {
           </div>
 
           {/* Date Navigation */}
-          <Suspense fallback={<LoadingDateNavigation />}>
+          <Suspense fallback={<Loading />}>
             <DateNavigation
               currentDate={currentDate}
               onPreviousDay={goToPreviousDay}

@@ -1,6 +1,12 @@
 export function formatDateKey(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
-    2,
-    "0"
-  )}-${String(date.getDate()).padStart(2, "0")}`;
+  const options = {
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+  };
+  const formattedDate = date.toLocaleDateString(
+    "en-AU",
+    options as Intl.DateTimeFormatOptions
+  );
+  return formattedDate;
 }

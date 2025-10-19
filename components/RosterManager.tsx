@@ -5,30 +5,9 @@ import { ErrorBoundary } from "react-error-boundary";
 import { RosterGrid } from "./RosterGrid";
 import { useRosterData } from "@/hooks/useRosterData";
 import { useDateNavigation } from "@/hooks/useDateNavigation";
-import { Button } from "./ui/button";
-import { Loading } from "./loading";
 import { DateNavigation } from "./DateNavigation";
-
-function ErrorFallback({
-  error,
-  resetErrorBoundary,
-}: {
-  error: Error;
-  resetErrorBoundary: () => void;
-}) {
-  return (
-    <div className="p-4 bg-red-50 text-red-700">
-      <h2>Something went wrong:</h2>
-      <pre>{error.message}</pre>
-      <Button
-        onClick={resetErrorBoundary}
-        className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-      >
-        Try again
-      </Button>
-    </div>
-  );
-}
+import { ErrorFallback } from "./error";
+import { Loading } from "./loading";
 
 export function RosterManager() {
   const [initialDate, setInitialDate] = useState<Date>(new Date());

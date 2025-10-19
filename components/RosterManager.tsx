@@ -6,8 +6,8 @@ import { RosterGrid } from "./RosterGrid";
 import { useRosterData } from "@/hooks/useRosterData";
 import { useDateNavigation } from "@/hooks/useDateNavigation";
 import { DateNavigation } from "./DateNavigation";
-import { ErrorFallback } from "./error";
-import { Loading } from "./loading";
+import { ErrorFallback } from "./ErrorFallback";
+import { Loading } from "./Loading";
 
 export function RosterManager() {
   const [initialDate, setInitialDate] = useState<Date>(new Date());

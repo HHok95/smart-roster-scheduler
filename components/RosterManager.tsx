@@ -7,7 +7,13 @@ import { useRosterData } from "@/hooks/useRosterData";
 import { useDateNavigation } from "@/hooks/useDateNavigation";
 import { DateNavigation } from "./DateNavigation";
 import { ErrorFallback } from "./ErrorFallback";
-import { Loading } from "./Loading";
+function Loading() {
+  return (
+    <div className="min-w-[280px] h-[40px] flex items-center justify-center bg-gray-50 animate-pulse">
+      Loading...
+    </div>
+  );
+}
 
 export function RosterManager() {
   const [initialDate, setInitialDate] = useState<Date>(new Date());

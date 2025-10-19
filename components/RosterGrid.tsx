@@ -13,6 +13,7 @@ import {
   Break,
 } from "../utils/breakCalculator";
 import { RosterLegend } from "./RosterLegend";
+import { useCrosshairHighlight } from "@/hooks/useCrosshairHighlight";
 
 export interface Shift {
   id: string;
@@ -69,6 +70,14 @@ export function RosterGrid({
   } | null>(null);
   const [hoveredShift, setHoveredShift] = useState<string | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
+
+  const {
+    isRowHovered,
+    isColHovered,
+    getOverlayColor,
+    handleHover,
+    clearHover,
+  } = useCrosshairHighlight();
 
   // Time slots from 09:00 to 22:00 (15-minute intervals)
   const startHour = 8;
@@ -206,6 +215,7 @@ export function RosterGrid({
     if (isDragging && dragStart && dragStart.employee === employee) {
       setDragEnd({ employee, slot });
     }
+    handleHover(employee, slot);
   };
 
   const handleMouseUp = () => {
@@ -415,7 +425,7 @@ export function RosterGrid({
       className="flex-1 overflow-hidden flex flex-col"
       style={{ backgroundColor: "#FAFAFA" }}
     >
-      <div className="flex-1 overflow-auto py-6 pr-1">
+      <div className="flex-1 overflow-auto py-6 pr-1" onMouseLeave={clearHover}>
         <div className="inline-block min-w-full">
           <div className="flex">
             {/* Employee names column */}
@@ -423,19 +433,25 @@ export function RosterGrid({
               <div className="h-20 border-b" style={{ borderColor: "#E0E0E0" }}>
                 <RosterLegend />
               </div>
-              {employees.map((employee) => (
-                <div
-                  key={employee}
-                  className="h-12 flex items-center px-4 border-b"
-                  style={{
-                    borderColor: "#E0E0E0",
-                    color: "#333333",
-                    minWidth: "140px",
-                  }}
-                >
-                  <span className="text-sm">{employee}</span>
-                </div>
-              ))}
+              {employees.map((employee) => {
+                const rowActive = isRowHovered(employee);
+                return (
+                  <div
+                    key={employee}
+                    className="h-12 flex items-center px-4 border-b"
+                    style={{
+                      borderColor: "#E0E0E0",
+                      color: "#333333",
+                      backgroundColor: rowActive
+                        ? "rgba(95,196,106,0.60)"
+                        : "transparent",
+                      minWidth: "140px",
+                    }}
+                  >
+                    <span className="text-sm">{employee}</span>
+                  </div>
+                );
+              })}
             </div>
 
             {/* Time grid */}
@@ -448,6 +464,7 @@ export function RosterGrid({
                 {Array.from({ length: totalSlots }).map((_, slotIndex) => {
                   // Show label every 4 slots (60 minutes)
                   const showLabel = slotIndex % 4 === 0;
+                  const colActive = isColHovered(slotIndex);
                   return (
                     <div
                       key={slotIndex}
@@ -457,6 +474,10 @@ export function RosterGrid({
                       style={{
                         width: `${CELL_WIDTH}px`,
                         borderColor: "#000000",
+                        backgroundColor: colActive
+                          ? "rgba(95,196,106,0.60)"
+                          : "transparent",
+                        transition: "background-color 80ms linear",
                         color: "#333333",
                       }}
                     >
@@ -476,154 +497,164 @@ export function RosterGrid({
               </div>
 
               {/* Employee rows */}
-              {employees.map((employee) => (
-                <div
-                  key={employee}
-                  className="flex h-12 border-b"
-                  style={{ borderColor: "#000000" }}
-                >
-                  {Array.from({ length: totalSlots }).map((_, slotIndex) => {
-                    const slotType = getSlotType(employee, slotIndex);
-                    const shift = getShiftForSlot(employee, slotIndex);
-                    const isFirstSlot = shift && slotIndex === shift.startSlot;
-                    const isDragHighlight = isSlotInDrag(employee, slotIndex);
-
-                    let backgroundColor = "#FAFAFA";
-                    if (isDragHighlight) {
-                      if (dragMode === "move-break" && movingBreak) {
-                        backgroundColor =
-                          movingBreak.shift.breaks[movingBreak.breakIndex]
-                            .type === "break-15s"
-                            ? "#636363"
-                            : "#636363";
-                      } else {
-                        backgroundColor = "#e2ffe4";
-                      }
-                    } else if (
-                      slotType === "break-15s" ||
-                      slotType === "break-30s"
-                    ) {
-                      backgroundColor = "#3b3b3b";
-                    } else {
+              {employees.map((employee) => {
+                return (
+                  <div
+                    key={employee}
+                    className="flex h-12 border-b"
+                    style={{
+                      borderColor: "#000000",
+                    }}
+                  >
+                    {Array.from({ length: totalSlots }).map((_, slotIndex) => {
+                      const slotType = getSlotType(employee, slotIndex);
                       const shift = getShiftForSlot(employee, slotIndex);
-                      if (shift) {
-                        const slotRole = shift.roles.find(
-                          (role) => role.slotNumber === slotIndex
-                        );
-                        if (slotRole) {
-                          backgroundColor = ROLE_TYPE_COLORS[slotRole.type];
+                      const isFirstSlot =
+                        shift && slotIndex === shift.startSlot;
+                      const isDragHighlight = isSlotInDrag(employee, slotIndex);
+
+                      let backgroundColor = "#FAFAFA";
+                      if (isDragHighlight) {
+                        if (dragMode === "move-break" && movingBreak) {
+                          backgroundColor =
+                            movingBreak.shift.breaks[movingBreak.breakIndex]
+                              .type === "break-15s"
+                              ? "#636363"
+                              : "#636363";
                         } else {
-                          backgroundColor = ROLE_TYPE_COLORS.reg; // Default color for shift
+                          backgroundColor = "#e2ffe4";
+                        }
+                      } else if (
+                        slotType === "break-15s" ||
+                        slotType === "break-30s"
+                      ) {
+                        backgroundColor = "#3b3b3b";
+                      } else {
+                        const shift = getShiftForSlot(employee, slotIndex);
+                        if (shift) {
+                          const slotRole = shift.roles.find(
+                            (role) => role.slotNumber === slotIndex
+                          );
+                          if (slotRole) {
+                            backgroundColor = ROLE_TYPE_COLORS[slotRole.type];
+                          } else {
+                            backgroundColor = ROLE_TYPE_COLORS.reg; // Default color for shift
+                          }
                         }
                       }
-                    }
 
-                    const cellContent = (
-                      <div
-                        key={slotIndex}
-                        className="flex-shrink-0 border-r border-l relative select-none"
-                        style={{
-                          width: `${CELL_WIDTH}px`,
-                          borderColor: "#000000",
-                          backgroundColor,
-                          cursor: getCursorStyle(employee, slotIndex),
-                        }}
-                        onMouseDown={(e) =>
-                          handleMouseDown(employee, slotIndex, e)
-                        }
-                        onMouseEnter={() =>
-                          handleMouseEnter(employee, slotIndex)
-                        }
-                        onContextMenu={(e) =>
-                          handleRightClick(employee, slotIndex, e)
-                        }
-                      >
-                        {isFirstSlot && shift && (
-                          <div
-                            className="absolute inset-y-0 left-0 flex items-center justify-center text-white text-xs px-2 rounded pointer-events-none"
-                            style={{
-                              width: `${
-                                (shift.endSlot - shift.startSlot) * CELL_WIDTH
-                              }px`,
-                              backgroundColor: "transparent",
-                              zIndex: 1,
-                            }}
-                            onMouseEnter={() => setHoveredShift(shift.id)}
-                            onMouseLeave={() => setHoveredShift(null)}
-                          >
-                            <span className="pt-4 whitespace-nowrap text-red-500 drop-shadow-md">
-                              {getTimeLabel(shift.startSlot)}–
-                              {getTimeLabel(shift.endSlot)}
-                            </span>
-                          </div>
-                        )}
-                        {/* Delete button - only on first slot and when hovered */}
-                        {isFirstSlot && shift && hoveredShift === shift.id && (
-                          <button
-                            onClick={(e) => handleDeleteShift(shift.id, e)}
-                            className="absolute top-0.5 right-0.5 w-4 h-4 rounded flex items-center justify-center transition-colors hover:bg-red-500 z-10 pointer-events-auto"
-                            style={{ backgroundColor: "rgba(0, 0, 0, 0.3)" }}
-                            onMouseDown={(e) => e.stopPropagation()}
-                          >
-                            <X className="h-3 w-3 text-white" />
-                          </button>
-                        )}
-                      </div>
-                    );
-
-                    // Only show tooltip for shift blocks (not on individual cells to avoid glitching)
-                    if (shift && isFirstSlot) {
-                      return (
-                        <TooltipProvider key={slotIndex} delayDuration={300}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div
+                      const cellContent = (
+                        <div
+                          key={slotIndex}
+                          className="flex-shrink-0 border-r border-l relative select-none"
+                          style={{
+                            width: `${CELL_WIDTH}px`,
+                            borderColor: "#000000",
+                            backgroundColor,
+                            cursor: getCursorStyle(employee, slotIndex),
+                          }}
+                          onMouseDown={(e) =>
+                            handleMouseDown(employee, slotIndex, e)
+                          }
+                          onMouseEnter={() =>
+                            handleMouseEnter(employee, slotIndex)
+                          }
+                          onMouseLeave={() => !isDragging && clearHover()}
+                          onContextMenu={(e) =>
+                            handleRightClick(employee, slotIndex, e)
+                          }
+                        >
+                          {isFirstSlot && shift && (
+                            <div
+                              className="absolute inset-y-0 left-0 flex items-center justify-center text-white text-xs px-2 rounded pointer-events-none"
+                              style={{
+                                width: `${
+                                  (shift.endSlot - shift.startSlot) * CELL_WIDTH
+                                }px`,
+                                backgroundColor,
+                                zIndex: 1,
+                              }}
+                              onMouseEnter={() => setHoveredShift(shift.id)}
+                              onMouseLeave={() => setHoveredShift(null)}
+                            >
+                              <span className="pt-4 whitespace-nowrap text-red-500 drop-shadow-md">
+                                {getTimeLabel(shift.startSlot)}–
+                                {getTimeLabel(shift.endSlot)}
+                              </span>
+                            </div>
+                          )}
+                          {/* Delete button - only on first slot and when hovered */}
+                          {isFirstSlot &&
+                            shift &&
+                            hoveredShift === shift.id && (
+                              <button
+                                onClick={(e) => handleDeleteShift(shift.id, e)}
+                                className="absolute top-0.5 right-0.5 w-4 h-4 rounded flex items-center justify-center transition-colors hover:bg-red-500 z-10 pointer-events-auto"
                                 style={{
-                                  backgroundColor: "#d9ead3",
-                                  borderRight: "1px solid ",
+                                  backgroundColor: "rgba(0, 0, 0, 0.3)",
                                 }}
-                                onMouseEnter={() => setHoveredShift(shift.id)}
-                                onMouseLeave={() => setHoveredShift(null)}
+                                onMouseDown={(e) => e.stopPropagation()}
                               >
-                                {cellContent}
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <div className="text-xs space-y-1">
-                                <div>
-                                  <strong>Duration:</strong>{" "}
-                                  {formatDuration(
-                                    shift.startSlot,
-                                    shift.endSlot
+                                <X className="h-3 w-3 text-white" />
+                              </button>
+                            )}
+                        </div>
+                      );
+
+                      // Only show tooltip for shift blocks (not on individual cells to avoid glitching)
+                      if (shift && isFirstSlot) {
+                        return (
+                          <TooltipProvider key={slotIndex} delayDuration={300}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div
+                                  style={{
+                                    backgroundColor: "#d9ead3",
+                                    borderRight: "1px solid ",
+                                  }}
+                                  onMouseEnter={() => setHoveredShift(shift.id)}
+                                  onMouseLeave={() => setHoveredShift(null)}
+                                >
+                                  {cellContent}
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <div className="text-xs space-y-1">
+                                  <div>
+                                    <strong>Duration:</strong>{" "}
+                                    {formatDuration(
+                                      shift.startSlot,
+                                      shift.endSlot
+                                    )}
+                                  </div>
+                                  <div>
+                                    <strong>Shift:</strong>{" "}
+                                    {getTimeLabel(shift.startSlot)}-
+                                    {getTimeLabel(shift.endSlot)}
+                                  </div>
+                                  {shift.breaks.length > 0 && (
+                                    <div className="pt-1 border-t border-gray-200">
+                                      <strong>Breaks:</strong>
+                                      {shift.breaks.map((brk, idx) => (
+                                        <div key={idx} className="ml-2">
+                                          • {getTimeLabel(brk.start)}-
+                                          {getTimeLabel(brk.end)}
+                                        </div>
+                                      ))}
+                                    </div>
                                   )}
                                 </div>
-                                <div>
-                                  <strong>Shift:</strong>{" "}
-                                  {getTimeLabel(shift.startSlot)}-
-                                  {getTimeLabel(shift.endSlot)}
-                                </div>
-                                {shift.breaks.length > 0 && (
-                                  <div className="pt-1 border-t border-gray-200">
-                                    <strong>Breaks:</strong>
-                                    {shift.breaks.map((brk, idx) => (
-                                      <div key={idx} className="ml-2">
-                                        • {getTimeLabel(brk.start)}-
-                                        {getTimeLabel(brk.end)}
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      );
-                    }
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        );
+                      }
 
-                    return cellContent;
-                  })}
-                </div>
-              ))}
+                      return cellContent;
+                    })}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
